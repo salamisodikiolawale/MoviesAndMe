@@ -14,8 +14,6 @@ class Search extends React.Component {
    */
   constructor(props){
     super(props);
-    //Create prop of my custom component
-    //initialisation du state avec un tab vide
     this.state = { 
       films: [],
       isLoading: false
@@ -24,6 +22,12 @@ class Search extends React.Component {
     this.page = 0
     this.total_pages = 0
   }
+
+
+  _displayDetailForFilm = (idFilm) => {
+    console.log("Display film with id " + idFilm)
+    this.props.navigation.navigate("FilmDetail", { idFilm: idFilm })
+}
 
   /**
    * Remise à zero du state
@@ -49,7 +53,6 @@ class Search extends React.Component {
     if(this.state.isLoading){
       return (
         <View style={styles.loading_container}>
-          {/* size(large, small): definit la taille du visuelle,  */}
           <ActivityIndicator size="large" color="blue"/>
         </View>
       )
@@ -72,22 +75,23 @@ class Search extends React.Component {
   _loadFilms() {
     //console.log(this.state.searchedText)
     if (this.searchedText.length > 0) {
-      this.setState({isLoading: true})//Lancement du chargement
+      this.setState({isLoading: true})
       getFilmsFromApiWithSearchedText(this.searchedText, this.page+1).then(data => {
           this.page = data.page
           this.total_pages = data.total_pages
           this.setState({ 
-            films: [...this.state.films, ...data.results ],//data.results,
-            isLoading: false //On stop le chargement
+            films: [...this.state.films, ...data.results ],
+            isLoading: false
           })
       })
     }
 }
 
+
+
   render() {
-    console.log('RENDER');
-    console.log('isLoading :',this.state.isLoading);
-    //console.log(this.state.films)
+    //console.log('RENDER');
+    //console.log(this.props);
     return (
       <View style={styles.main_container}>
         <TextInput 
@@ -99,26 +103,18 @@ class Search extends React.Component {
         <Button title='Rechercher' onPress={() => this._searchFilms() }/>
 
         <FlatList
-            //data = {films}
-            //data = {this._films}
             data = {this.state.films}
             keyExtractor= {(item)=> item.backdrop_path+item.id.toString()}
-            renderItem={({item}) => <FilmItem film={item}/>}
-            onEndReachedThreshold= {0.5}/*declenche l'event onreach a moitier de la page */
+            renderItem={({item}) => <FilmItem film={item} displayDetailForFilm = {this._displayDetailForFilm}/>}
+            onEndReachedThreshold= {0.5}
             onEndReached={() => {
-              console.log("onReachEnd");
+              //console.log("onReachEnd");
               if(this.page < this.total_pages) {
                 this._loadFilms();
               }
             }}
         />
         { this._displayLoading() }
-        {/* { this.state.isLoading ?
-          <View style={styles.loading_container}>
-            <ActivityIndicator size='large' color="blue" />
-          </View>
-          : null
-        } */}
       </View>
     )
   }
@@ -127,7 +123,7 @@ class Search extends React.Component {
 const styles = StyleSheet.create({
   main_container: {
     flex: 1,
-    marginTop: 20
+    //marginTop: 20
   },
   textinput: {
     marginLeft: 5,
