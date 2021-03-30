@@ -1,9 +1,10 @@
 import React from 'react'
-import { StyleSheet, View, Text, ActivityIndicator, Image } from 'react-native'
+import { StyleSheet, View, Text, ActivityIndicator, Image, TouchableOpacity } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler';
 import { getFilmDetailFromApi, getImageFromApi } from '../API/TMDBApi';
 import moment from 'moment';
 import numeral from 'numeral'
+import { connect } from 'react-redux'
 
 class FilmDetail extends React.Component {
 
@@ -29,6 +30,28 @@ class FilmDetail extends React.Component {
     }
 
     /**
+     * Appele immediatement apres modif du component
+     * Le component FilmDetail reçoit la liste des nouveaux films, 
+     * la mappe à ses props et lance le cycle de vie updating pour se re-rendre.
+     * 
+     * Verificaation:
+     */
+    componentDidUpdate() {
+      console.log("componentDidUpdate : ")
+      console.log(this.props.favoritesFilm)
+    }
+  
+
+    /**
+     * Def de l'action
+     */
+    _toggleFavorite() {
+        const action = { type: "TOGGLE_FAVORITE", value: this.state.film }
+
+        this.props.dispatch(action);
+    }
+
+    /**
      * return un une vue de chargement
      * @returns View
      */
@@ -40,6 +63,20 @@ class FilmDetail extends React.Component {
               </View>
           )
       }
+  }
+
+  _displayFavoriteImage(){
+    var sourceImage = require('../Images/ic_favorite_border.png');
+    if(this.props.favoritesFilm.findIndex( item => item.id === this.state.film.id ) !== -1){
+      //Le Film est dans nos favoris
+      sourceImage =  require('../Images/ic_favorite.png');
+    }
+    return (
+      <Image 
+        style={styles.favorite_image}
+        source={sourceImage}
+      />
+    )
   }
   
   /**
@@ -56,6 +93,11 @@ class FilmDetail extends React.Component {
             source={{uri: getImageFromApi(film.backdrop_path)}}
           />
           <Text style={styles.title_text}>{film.title}</Text>
+          
+          <TouchableOpacity style={styles.favorite_container} onPress={() => this._toggleFavorite()}> 
+             { this._displayFavoriteImage() }
+          </TouchableOpacity>
+
           <Text style={styles.description_text}>{film.overview}</Text>
           <Text style={styles.default_text}>Sorti le {moment(new Date(film.release_date)).format('DD/MM/YYYY')}</Text>
           <Text style={styles.default_text}>Note : {film.vote_average} / 10</Text>
@@ -75,9 +117,9 @@ class FilmDetail extends React.Component {
 
 
   render() {
+    console.log(this.props)
     return (
       <View style={styles.main_container}>
-        {/* <Text>Détail du film {this.props.route.params.idFilm}</Text> */}
         {this._displayLoading()}
         {this._displayFilm()}
       </View>
@@ -127,7 +169,35 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     marginRight: 5,
     marginTop: 5,
+  },
+  favorite_container: {
+    alignItems: 'center'
+  },
+  favorite_image: {
+    width: 40,
+    height: 40
   }
 })
 
-export default FilmDetail
+/**
+ * @param {stateGlobal} sate 
+ * @returns state
+ */
+ const mapStateToProps = (state) => {
+  return {
+    favoritesFilm: state.favoritesFilm
+  }
+}
+
+/**
+ * Distribuer notre action au reducer
+ * envoie d'action au store Redux
+ * @param {*} dispatch 
+ * @returns 
+ */
+const maDispatchToProps = (dispatch) => {
+  return {
+    dispatch: (action) => { dispatch(action) }
+  }
+}
+export default connect(mapStateToProps, maDispatchToProps)(FilmDetail)
